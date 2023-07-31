@@ -1,0 +1,15 @@
+代码列表(按照运行次序排列)：
+
+1.match_snpmiss.sh
+
+2.addproxy.R
+
+3.fill_proxy.sh    
+
+####clumped.tsv后缀代表没有添加proxy snp的结果数据集；clumped2.tsv是添加了proxy snp的结果数据集
+
+4. predata_UVMR.R
+
+5. UVMR0607.R
+
+6.
