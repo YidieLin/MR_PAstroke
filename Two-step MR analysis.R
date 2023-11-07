@@ -1042,6 +1042,250 @@ write.table(data_mo_egger, file = output_file_pleio, sep = ",", quote = FALSE, r
 
 
 
+############################# Mediation analysis #################################
+
+#.rs.restartR()
+
+##Obesity related
+data <- data.frame()
+exposures <- c("LST","MVPA","AbPA")
+mediators <- c("BMI","BFP","WHR","WC","HC")
+outcomes <- c("AIS","CAS","LAS","SVS")
+
+for (exposure in exposures) {
+  for (mediator in mediators) {
+    for (outcome in outcomes) {
+      
+      print(paste0("BEGIN: -------prepare data ", exposure,"_", mediator,"_",outcome,"---------"))
+      
+      if (mediator == "BMI") {
+        step1_res <- read.csv(paste0("./Twostep_MR/First_step/results_V1/mrpresso/", exposure, "_ieu-b-40_mrpresso.csv"), 
+                              header = T, sep = ",", stringsAsFactors = FALSE)
+      } else if (mediator == "BFP"){
+        step1_res <- read.csv(paste0("./Twostep_MR/First_step/results_V1/mrpresso/", exposure, "_ukb-b-8909_mrpresso.csv"), 
+                              header = T, sep = ",", stringsAsFactors = FALSE)
+      } else if (mediator == "WHR"){
+        step1_res <- read.csv(paste0("./Twostep_MR/First_step/results_V1/mrpresso/", exposure, "_WHR_mrpresso.csv"), 
+                              header = T, sep = ",", stringsAsFactors = FALSE)
+      } else if (mediator == "WC"){
+        step1_res <- read.csv(paste0("./Twostep_MR/First_step/results_V1/mrpresso/", exposure, "_ukb-b-9405_mrpresso.csv"), 
+                              header = T, sep = ",", stringsAsFactors = FALSE)
+      } else if (mediator == "HC"){
+        step1_res <- read.csv(paste0("./Twostep_MR/First_step/results_V1/mrpresso/", exposure, "_ukb-b-15590_mrpresso.csv"), 
+                              header = T, sep = ",", stringsAsFactors = FALSE)
+      }
+      
+      step2_res <- read.csv(paste0("./Twostep_MR/Second_step/results_moveoutliers/", mediator, "_", outcome, "_mrpresso.csv"), 
+                            header = T, sep = ",", stringsAsFactors = FALSE)
+      
+      res_2smr <- read.csv(paste0("./Forward_MR/results_moveoutliers/", exposure, "_", outcome, "_mrpresso.csv"), 
+                           header = T, sep = ",", stringsAsFactors = FALSE)
+      
+      step1res <- step1_res[step1_res$method=="Inverse variance weighted",]
+      step2res <- step2_res[step2_res$method=="Inverse variance weighted",] 
+      res2smr <- res_2smr[res_2smr$method=="Inverse variance weighted",] 
+      
+      d_res <- subset(step1res, select = c("exposure"))
+      d_res$mediator <- step1res$outcome
+      d_res$outcome <- step2res$outcome
+      d_res$nsnp1 <- step1res$nsnp
+      d_res$nsnp2 <- step2res$nsnp
+      d_res$b1 <- step1res$b
+      d_res$b2 <- step2res$b
+      d_res$se1 <- step1res$se
+      d_res$se2 <- step2res$se
+      
+      #####data prepared#########
+      print(paste0("step1: data prepared ", exposure,"_", mediator,"_",outcome,"。"))
+      
+      
+      ####Calculating indirect effect and its se #####
+      d_res$b3 <- d_res$b1*d_res$b2
+      d_res$se3 <- sqrt(d_res$b1*d_res$b1*d_res$se2*d_res$se2+d_res$b2*d_res$b2*d_res$se1*d_res$se1)
+      confidence_level <- 0.95
+      margin_of_error <- qnorm((1 + confidence_level) / 2) * d_res$se3
+      d_res$b3_LL <- d_res$b3 - margin_of_error
+      d_res$b3_UL <- d_res$b3 + margin_of_error
+      
+      d_res$Z3 <- d_res$b3/d_res$se3
+      d_res$p3 <-  2*pnorm(q=abs(d_res$Z3), lower.tail=FALSE)
+      
+      print(paste0("step2: indirect effect is ",d_res$b3,", p value is ",d_res$p3,"."))
+      
+      #### Propartion mediated #####
+      d_res$mp = 100*d_res$b3/res2smr$b
+      d_res$mp_LL <- 100*d_res$b3_LL/res2smr$b
+      d_res$mp_UL <- 100*d_res$b3_UL/res2smr$b
+      
+      ####Tidy results##
+      
+      d_res$total <- sprintf("%.3f(%.3f to %.3f)",
+                             res2smr$b,
+                             res2smr$b-qnorm((1 + 0.95) / 2) * res2smr$se,
+                             res2smr$b+qnorm((1 + 0.95) / 2) * res2smr$se)
+      
+      d_res$step1 <- sprintf("%.3f(%.3f to %.3f)",
+                             d_res$b1,
+                             d_res$b1-qnorm((1 + 0.95) / 2) * d_res$se1,
+                             d_res$b1+qnorm((1 + 0.95) / 2) * d_res$se1)
+      
+      d_res$step2 <- sprintf("%.3f(%.3f to %.3f)",
+                             d_res$b2,
+                             d_res$b2-qnorm((1 + 0.95) / 2) * d_res$se2,
+                             d_res$b2+qnorm((1 + 0.95) / 2) * d_res$se2)
+      
+      d_res$indirect <- sprintf("%.3f(%.3f to %.3f)",
+                                d_res$b3,
+                                d_res$b3_LL,
+                                d_res$b3_UL)
+      
+      if (exposure == "MVPA"){
+        d_res$Proportion_mediated <- sprintf("%.2f%%(%.2f%% to %.2f%%)", 
+                                             d_res$mp,
+                                             d_res$mp_UL,
+                                             d_res$mp_LL)
+      } else if (exposure == "LST"){
+        d_res$Proportion_mediated <- sprintf("%.2f%%(%.2f%% to %.2f%%)", 
+                                             d_res$mp,
+                                             d_res$mp_LL,
+                                             d_res$mp_UL)  
+      }
+      print(paste0("step3: proportion mediated is ",d_res$Proportion_mediated,"。"))
+      
+      
+      data <- rbind(data, d_res)
+      
+      print(paste0("step4: results combined。"))
+      print(paste0("END: ------------------------------------"))
+      
+    }
+  }
+}
+
+output_file <- paste0("./Twostep_MR/mediation_results_obesity.csv")
+
+write.table(data, file = output_file, sep = ",", quote = FALSE, row.names = FALSE)
+#d_res$seMP <- (d_res$se3^2+d_res$Proportion_mediated^2*res2smr$se^2)/res2smr$b^2
+
+
+###Lipids
+data <- data.frame()
+exposures <- c("LST","MVPA","AbPA")
+mediators <- c("ApA1","ApB","LDL_C","HDL_C","TG")
+outcomes <- c("AIS","CAS","LAS","SVS")
+
+for (exposure in exposures) {
+  for (mediator in mediators) {
+    for (outcome in outcomes) {
+      
+      print(paste0("BEGIN: -------prepare data ", exposure,"_", mediator,"_",outcome,"---------"))
+      
+      if (mediator == "ApA1") {
+        step1_res <- read.csv(paste0("./Twostep_MR/First_step/results_V1/mrpresso/", exposure, "_ieu-b-107_mrpresso.csv"), 
+                              header = T, sep = ",", stringsAsFactors = FALSE)
+      } else if (mediator == "ApB"){
+        step1_res <- read.csv(paste0("./Twostep_MR/First_step/results_V1/mrpresso/", exposure, "_ieu-b-108_mrpresso.csv"), 
+                              header = T, sep = ",", stringsAsFactors = FALSE)
+      } else {
+        step1_res <- read.csv(paste0("./Twostep_MR/First_step/results_V1/mrpresso/", exposure, "_",mediator,"_mrpresso.csv"), 
+                              header = T, sep = ",", stringsAsFactors = FALSE)
+      } 
+      
+      step2_res <- read.csv(paste0("./Twostep_MR/Second_step/results_moveoutliers/", mediator, "_", outcome, "_mrpresso.csv"), 
+                            header = T, sep = ",", stringsAsFactors = FALSE)
+      
+      res_2smr <- read.csv(paste0("./Forward_MR/results_moveoutliers/", exposure, "_", outcome, "_mrpresso.csv"), 
+                           header = T, sep = ",", stringsAsFactors = FALSE)
+      
+      step1res <- step1_res[step1_res$method=="Inverse variance weighted",]
+      step2res <- step2_res[step2_res$method=="Inverse variance weighted",] 
+      res2smr <- res_2smr[res_2smr$method=="Inverse variance weighted",] 
+      
+      d_res <- subset(step1res, select = c("exposure"))
+      d_res$mediator <- step1res$outcome
+      d_res$outcome <- step2res$outcome
+      d_res$nsnp1 <- step1res$nsnp
+      d_res$nsnp2 <- step2res$nsnp
+      d_res$b1 <- step1res$b
+      d_res$b2 <- step2res$b
+      d_res$se1 <- step1res$se
+      d_res$se2 <- step2res$se
+      
+      #####Data prepared#########
+      print(paste0("step1: data prepared ", exposure,"_", mediator,"_",outcome,"。"))
+      
+      
+      ####Calculating indirect effect and its se #####
+      d_res$b3 <- d_res$b1*d_res$b2
+      d_res$se3 <- sqrt(d_res$b1*d_res$b1*d_res$se2*d_res$se2+d_res$b2*d_res$b2*d_res$se1*d_res$se1)
+      confidence_level <- 0.95
+      margin_of_error <- qnorm((1 + confidence_level) / 2) * d_res$se3
+      d_res$b3_LL <- d_res$b3 - margin_of_error
+      d_res$b3_UL <- d_res$b3 + margin_of_error
+      
+      d_res$Z3 <- d_res$b3/d_res$se3
+      d_res$p3 <-  2*pnorm(q=abs(d_res$Z3), lower.tail=FALSE)
+      
+      print(paste0("step2: indirect effect is",d_res$b3,". p value is ",d_res$p3,"."))
+      
+      ####Proportion mediated #####
+      d_res$mp = 100*d_res$b3/res2smr$b
+      d_res$mp_LL <- 100*d_res$b3_LL/res2smr$b
+      d_res$mp_UL <- 100*d_res$b3_UL/res2smr$b
+      
+      ####Tidy results###
+      
+      d_res$total <- sprintf("%.3f(%.3f to %.3f)",
+                             res2smr$b,
+                             res2smr$b-qnorm((1 + 0.95) / 2) * res2smr$se,
+                             res2smr$b+qnorm((1 + 0.95) / 2) * res2smr$se)
+      
+      d_res$step1 <- sprintf("%.3f(%.3f to %.3f)",
+                             d_res$b1,
+                             d_res$b1-qnorm((1 + 0.95) / 2) * d_res$se1,
+                             d_res$b1+qnorm((1 + 0.95) / 2) * d_res$se1)
+      
+      d_res$step2 <- sprintf("%.3f(%.3f to %.3f)",
+                             d_res$b2,
+                             d_res$b2-qnorm((1 + 0.95) / 2) * d_res$se2,
+                             d_res$b2+qnorm((1 + 0.95) / 2) * d_res$se2)
+      
+      d_res$indirect <- sprintf("%.3f(%.3f to %.3f)",
+                                d_res$b3,
+                                d_res$b3_LL,
+                                d_res$b3_UL)
+      
+      if (exposure == "MVPA" ){
+        d_res$Proportion_mediated <- sprintf("%.2f%%(%.2f%% to %.2f%%)", 
+                                             d_res$mp,
+                                             d_res$mp_UL,
+                                             d_res$mp_LL)
+      } else if (exposure == "LST"){
+        d_res$Proportion_mediated <- sprintf("%.2f%%(%.2f%% to %.2f%%)", 
+                                             d_res$mp,
+                                             d_res$mp_LL,
+                                             d_res$mp_UL)  
+      } else if (exposure == "AbPA"){
+        d_res$Proportion_mediated <- sprintf("%.2f%%(%.2f%% to %.2f%%)", 
+                                             d_res$mp,
+                                             d_res$mp_UL,
+                                             d_res$mp_LL)  
+      }
+      print(paste0("step3: proportion mediated is ",d_res$Proportion_mediated,"。"))
+      
+      
+      data <- rbind(data, d_res)
+      
+      print(paste0("step4: results combined。"))
+      print(paste0("END: ----------------------------------"))
+      
+    }
+  }
+}
+
+output_file <- paste0("./Twostep_MR/mediation_results_lipids.csv")
+
+write.table(data, file = output_file, sep = ",", quote = FALSE, row.names = FALSE)
 
 
 
