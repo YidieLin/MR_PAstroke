@@ -108,11 +108,6 @@ for (outcome in outcomes) {
 
 ############ Part 2.  Subgroup MR analysis########################
 
-library(TwoSampleMR)
-library(MRPRESSO)
-library(mr.raps)
-library(tidyverse)
-
 data_res <- data.frame()
 data_heter <- data.frame()
 data_egger <- data.frame()
@@ -137,7 +132,7 @@ for (exposure in exposures) {
                     over.dispersion = FALSE, 
                     loss.function = "tukey", 
                     diagnosis = FALSE)
-    print(paste0("step3 mr-raps分析完毕"))
+    print(paste0("step3 mr-raps analysis: DONE"))
     ## Mendelian Randomization package
     # Contamixation Mixture method
     mydat2 <- dat_to_MRInput(mydat)
@@ -240,7 +235,7 @@ data_mrpresso <- data.frame()
 data_outliers <- data.frame()
 data_distort <- data.frame()
 
-#暴露列表和结局列表
+#exposures and outcomes
 exposures <- c("LST","MVPA","AbPA","MVPA_2018","ST")
 outcomes <- c("ebi-a-GCST006908","ebi-a-GCST006910","ebi-a-GCST006907","ebi-a-GCST006909")
 
@@ -248,7 +243,7 @@ outcomes <- c("ebi-a-GCST006908","ebi-a-GCST006910","ebi-a-GCST006907","ebi-a-GC
 for (exposure1 in exposures) {
   for (outcome1 in outcomes) {
     #step 1: prepare the exposure data
-    e_o_dat_clean <- read.table(paste0("./Forward_MR/data_clean/", exposure1, "_", outcome1, "_V2.csv"), 
+    e_o_dat_clean <- read.table(paste0("./SubgroupMR/data_clean/", exposure1, "_", outcome1, "_V2.csv"), 
                                 header = T, sep = ",", stringsAsFactors = FALSE)
     print(paste0("Loading datasets：", exposure1,"_", outcome1,". Time：", Sys.time ()))
     
@@ -339,7 +334,7 @@ for (exposure1 in exposures) {
     
     
     #Output datastes that marked outliers
-    outdat_file <- paste0("./Forward_MR/data_doutliers/", exposure1, "_", outcome1, "_V3.csv")
+    outdat_file <- paste0("./SubrgoupMR/data_doutliers/", exposure1, "_", outcome1, "_V3.csv")
     write.table(e_o_dat_clean, file = outdat_file, sep = ",", quote = FALSE, row.names = FALSE)
     ##
     print(paste("END: MRPRESSO detected ", exposure1, "-", outcome1," outliers. ", e_o_dat_clean$SNP[e_o_dat_clean$outlier == "yes"]))
@@ -380,7 +375,7 @@ outcomes <- c("ebi-a-GCST006908","ebi-a-GCST006910","ebi-a-GCST006907","ebi-a-GC
 
 for (exposure in exposures) {
   for (outcome in outcomes) {
-    e_o_dat <- read.table(paste0("./Forward_MR/data_doutliers/", exposure, "_", outcome, "_V3.csv"), 
+    e_o_dat <- read.table(paste0("./SubgroupMR/data_doutliers/", exposure, "_", outcome, "_V3.csv"), 
                           header = T, sep = ",", stringsAsFactors = FALSE)
     
     print(paste("Step1: Loading:", exposure, " vs ", outcome, "。","No. of SNPs:", nrow(e_o_dat),"."))
