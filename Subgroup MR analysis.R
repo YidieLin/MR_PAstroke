@@ -219,9 +219,9 @@ for (exposure in exposures) {
 
 data_res <- data_res %>% distinct(Outcomes, Exposures, METHOD, .keep_all =TRUE)
 
-output_file_res <- paste0("./SubgroupMR/results_main/Results_PAtoStroke.csv")
-output_file_heter <- paste0("./SubgroupMR/results_main/Heterogeneity.csv")
-output_file_pleio <- paste0("./SubgroupMR/results_main/MRegger_intercept.csv")
+output_file_res <- paste0("./Subgroup_MR/results_main/Results_PAtoStroke.csv")
+output_file_heter <- paste0("./Subgroup_MR/results_main/Heterogeneity.csv")
+output_file_pleio <- paste0("./Subgroup_MR/results_main/MRegger_intercept.csv")
 
 write.table(data_res, file = output_file_res, sep = ",", quote = FALSE, row.names = FALSE)
 write.table(data_heter, file = output_file_heter, sep = ",", quote = FALSE, row.names = FALSE)
@@ -243,7 +243,7 @@ outcomes <- c("ebi-a-GCST006908","ebi-a-GCST006910","ebi-a-GCST006907","ebi-a-GC
 for (exposure1 in exposures) {
   for (outcome1 in outcomes) {
     #step 1: prepare the exposure data
-    e_o_dat_clean <- read.table(paste0("./SubgroupMR/data_clean/", exposure1, "_", outcome1, "_V2.csv"), 
+    e_o_dat_clean <- read.table(paste0("./Subgroup_MR/data_clean/", exposure1, "_", outcome1, "_V2.csv"), 
                                 header = T, sep = ",", stringsAsFactors = FALSE)
     print(paste0("Loading datasets：", exposure1,"_", outcome1,". Time：", Sys.time ()))
     
@@ -347,21 +347,21 @@ for (exposure1 in exposures) {
 }
 
 data_mrpresso <- cbind(data_mrpresso[1:7], unlist(data_mrpresso$RSSobs))
-outdat_file_mrpresso <- paste0("./SubgroupMR/sensitivity/MRPRESSO.csv")
-outdat_file_outliers <- paste0("./SubgroupMR/sensitivity/Outliers.csv")
-outdat_file_distort <- paste0("./SubgroupMR/sensitivity/MRPRESSO_distort.csv")
+outdat_file_mrpresso <- paste0("./Subgroup_MR/sensitivity/MRPRESSO.csv")
+outdat_file_outliers <- paste0("./Subgroup_MR/sensitivity/Outliers.csv")
+outdat_file_distort <- paste0("./Subgroup_MR/sensitivity/MRPRESSO_distort.csv")
 write.table(data_mrpresso, file = outdat_file_mrpresso, sep = ",", quote = FALSE, row.names = FALSE)
 write.table(data_outliers, file = outdat_file_outliers, sep = ",", quote = FALSE, row.names = FALSE)
 write.table(data_distort, file = outdat_file_distort, sep = ",", quote = FALSE, row.names = FALSE)
 
 
-data <- read.table(paste0("./SubgroupMR/results_main/MRPRESSO_distort.csv"), 
+data <- read.table(paste0("./Subgroup_MR/results_main/MRPRESSO_distort.csv"), 
                    header = T, sep = ",", stringsAsFactors = FALSE)
 
 data_long <- data %>%
   pivot_longer(cols = c(V1, V2), names_to = "variable", values_to = "value")
 
-outdat_file_distort <- paste0("./SubgroupMR/results_main/MRPRESSO_distort.csv")
+outdat_file_distort <- paste0("./Subgroup_MR/results_main/MRPRESSO_distort.csv")
 write.table(data_long, file = outdat_file_distort, sep = ",", quote = FALSE, row.names = FALSE)
 
 
@@ -375,7 +375,7 @@ outcomes <- c("ebi-a-GCST006908","ebi-a-GCST006910","ebi-a-GCST006907","ebi-a-GC
 
 for (exposure in exposures) {
   for (outcome in outcomes) {
-    e_o_dat <- read.table(paste0("./SubgroupMR/data_doutliers/", exposure, "_", outcome, "_V3.csv"), 
+    e_o_dat <- read.table(paste0("./Subgroup_MR/data_doutliers/", exposure, "_", outcome, "_V3.csv"), 
                           header = T, sep = ",", stringsAsFactors = FALSE)
     
     print(paste("Step1: Loading:", exposure, " vs ", outcome, "。","No. of SNPs:", nrow(e_o_dat),"."))
@@ -449,9 +449,9 @@ for (exposure in exposures) {
 }
 
 
-output_file_res <- paste0("./SubgroupMR/results_moveoutliers/Results_PAtoStroke_mo.csv")
-output_file_heter <- paste0("./SubgroupMR/results_moveoutliers/Heterogeneity_mo.csv")
-output_file_pleio <- paste0("./SubgroupMR/results_moveoutliers/MRegger_intercept_mo.csv")
+output_file_res <- paste0("./Subgroup_MR/results_moveoutliers/Results_PAtoStroke_mo.csv")
+output_file_heter <- paste0("./Subgroup_MR/results_moveoutliers/Heterogeneity_mo.csv")
+output_file_pleio <- paste0("./Subgroup_MR/results_moveoutliers/MRegger_intercept_mo.csv")
 
 write.table(data_mo_res, file = output_file_res, sep = ",", quote = FALSE, row.names = FALSE)
 write.table(data_mo_heter, file = output_file_heter, sep = ",", quote = FALSE, row.names = FALSE)
